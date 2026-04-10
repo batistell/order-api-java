@@ -30,8 +30,8 @@ public class OrderValidationService {
         log.info("Validating item: {}", item.getProductId());
 
         try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            StructuredTaskScope.Subtask<CatalogProductDto> priceTask = scope.fork(() -> getCatalogProductWrapped(item.getProductId()));
-            StructuredTaskScope.Subtask<InventoryDto> stockTask = scope.fork(() -> getInventoryWrapped(item.getProductId()));
+            StructuredTaskScope.Subtask<CatalogProductDto> priceTask = scope.fork(() -> getCatalogProductWrapped(item.getProductId()).join());
+            StructuredTaskScope.Subtask<InventoryDto> stockTask = scope.fork(() -> getInventoryWrapped(item.getProductId()).join());
 
             scope.join().throwIfFailed(); // Joins both virtual threads, throws if any failed
 
