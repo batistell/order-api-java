@@ -1,0 +1,75 @@
+server:
+  port: 8092
+  shutdown: graceful
+
+spring:
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  application:
+    name: order-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/inventory?currentSchema=orders
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    schemas: orders
+    default-schema: orders
+    locations: classpath:db/migration
+    user: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.default_schema: orders
+    show-sql: true
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+catalog:
+  api:
+    url: http://localhost:8081
+
+inventory:
+  api:
+    url: http://localhost:8082
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      catalogDB:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+      inventoryDB:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+  timelimiter:
+    instances:
+      catalogDB:
+        timeoutDuration: 2s
+      inventoryDB:
+        timeoutDuration: 2s
+  bulkhead:
+    instances:
+      inventoryDB:
+        maxConcurrentCalls: 10
+      catalogDB:
+        maxConcurrentCalls: 10
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
